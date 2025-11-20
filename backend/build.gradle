@@ -28,8 +28,11 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 
-	// H2 Database
+	// H2 Database (개발용)
 	runtimeOnly 'com.h2database:h2'
+
+	// PostgreSQL (프로덕션용)
+	runtimeOnly 'org.postgresql:postgresql'
 
 	// JWT
 	implementation 'io.jsonwebtoken:jjwt-api:0.12.3'

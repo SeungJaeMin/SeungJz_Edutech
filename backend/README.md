@@ -46,18 +46,68 @@ gradlew.bat clean build   # Windows
 ./gradlew clean build -x test
 ```
 
+## 데이터베이스 설정
+
+### H2 Database (기본 - 개발용)
+별도 설정 없이 바로 실행 가능 (인메모리 DB)
+
+```bash
+# 그냥 실행
+java -jar backend-0.0.1-SNAPSHOT.jar
+```
+
+**H2 Console 접속:**
+- URL: http://localhost:8080/h2-console
+- JDBC URL: `jdbc:h2:mem:edutech`
+- Username: `sa`
+- Password: (비어있음)
+
+### PostgreSQL (프로덕션용)
+
+#### 1. PostgreSQL 실행
+```bash
+# Docker로 PostgreSQL 실행
+docker run -d \
+  --name edutech-postgres \
+  -p 5432:5432 \
+  -e POSTGRES_DB=edutech \
+  -e POSTGRES_USER=admin \
+  -e POSTGRES_PASSWORD=admin123 \
+  postgres:15-alpine
+
+# 또는 docker-compose 사용
+cd SeungJz_Edutech
+docker-compose -f docker-compose.simple.yml up postgres -d
+```
+
+#### 2. PostgreSQL 프로파일로 실행
+```bash
+# 명령줄에서
+java -jar backend-0.0.1-SNAPSHOT.jar --spring.profiles.active=postgres
+
+# IDE에서 (IntelliJ)
+Run Configuration -> Environment Variables:
+SPRING_PROFILES_ACTIVE=postgres
+
+# IDE에서 (Eclipse)
+Run Configurations -> Arguments:
+--spring.profiles.active=postgres
+```
+
+**PostgreSQL 접속 정보:**
+- Host: localhost
+- Port: 5432
+- Database: edutech
+- Username: admin
+- Password: admin123
+
 ## 서버 접속 정보
 
 실행 후 다음 URL에서 확인 가능:
 
 - **API 서버**: http://localhost:8080
 - **Swagger UI**: http://localhost:8080/swagger-ui.html
-- **H2 Console**: http://localhost:8080/h2-console
-
-### H2 Database 설정
-- JDBC URL: `jdbc:h2:mem:edutech`
-- Username: `sa`
-- Password: (비어있음)
+- **H2 Console**: http://localhost:8080/h2-console (H2 사용 시)
 
 ## API 엔드포인트
 

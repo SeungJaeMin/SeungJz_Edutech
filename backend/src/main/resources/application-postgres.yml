@@ -1,0 +1,30 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/edutech
+    driver-class-name: org.postgresql.Driver
+    username: admin
+    password: admin123
+
+  jpa:
+    hibernate:
+      ddl-auto: update  # 프로덕션에서는 validate 사용
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        # PostgreSQL 최적화
+        jdbc:
+          batch_size: 20
+        order_inserts: true
+        order_updates: true
+
+  h2:
+    console:
+      enabled: false  # PostgreSQL 사용 시 H2 콘솔 비활성화
+
+# Logging
+logging:
+  level:
+    com.seungjz.edutech: INFO
+    org.hibernate.SQL: INFO
