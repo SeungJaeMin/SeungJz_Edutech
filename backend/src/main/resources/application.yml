@@ -1,0 +1,88 @@
+spring:
+  application:
+    name: seungjz-edutech-api
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/edutech
+    username: postgres
+    password: ${DB_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+  # 이메일 설정 (Gmail SMTP)
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${SMTP_USERNAME:}
+    password: ${SMTP_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+
+# 파일 업로드 설정
+file:
+  upload-dir: uploads/images
+
+# AWS S3 설정 (환경변수로 제공되면 사용, 없으면 로컬 저장)
+cloud:
+  aws:
+    region:
+      static: ${AWS_REGION:ap-northeast-2}
+    credentials:
+      access-key: ${AWS_ACCESS_KEY:}
+      secret-key: ${AWS_SECRET_KEY:}
+    s3:
+      bucket: ${S3_BUCKET_NAME:}
+
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+
+# JWT 설정
+jwt:
+  secret: ${JWT_SECRET:seungjz-edutech-secret-key-change-this-in-production}
+  expiration: 3600000 # 1시간 (학습 세션에 적합)
+
+# CORS 설정
+cors:
+  allowed-origins: http://localhost:3000,http://localhost:3001
+  allowed-methods: GET,POST,PUT,DELETE,PATCH,OPTIONS
+  allowed-headers: "*"
+  allow-credentials: true
+
+# Swagger 설정
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+
+# Vercel Analytics 설정
+vercel:
+  analytics:
+    access-token: ${VERCEL_ACCESS_TOKEN:L8LSxR3itQP5sD8NDXmUDWdT}
+    team-id: ${VERCEL_TEAM_ID:team_784uwRtVhBevafmzQNYQFb8T}
+    project-id: ${VERCEL_PROJECT_ID:prj_03mx6XUTaWKvgHDZFLXwIBdKg3qY}
+    api-base-url: https://api.vercel.com

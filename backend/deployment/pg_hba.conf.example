@@ -1,0 +1,27 @@
+# PostgreSQL Client Authentication Configuration File
+# ===================================================
+#
+# EC2에서 사용 중인 설정 (참고용)
+# 실제 파일 위치: /var/lib/pgsql/data/pg_hba.conf
+#
+# 변경 후 적용:
+# sudo systemctl reload postgresql
+# 또는
+# sudo -u postgres psql -c "SELECT pg_reload_conf();"
+
+# TYPE  DATABASE        USER            ADDRESS                 METHOD
+
+# "local" is for Unix domain socket connections only
+local   all             all                                     peer
+
+# IPv4 local connections:
+host    all             all             127.0.0.1/32            scram-sha-256
+
+# IPv6 local connections:
+host    all             all             ::1/128                 scram-sha-256
+
+# Allow replication connections from localhost, by a user with the
+# replication privilege.
+local   replication     all                                     peer
+host    replication     all             127.0.0.1/32            ident
+host    replication     all             ::1/128                 ident

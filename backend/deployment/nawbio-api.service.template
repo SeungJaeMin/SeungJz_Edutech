@@ -1,0 +1,42 @@
+[Unit]
+Description=NawBio API Service
+After=network.target postgresql.service
+
+[Service]
+Type=simple
+User=ec2-user
+WorkingDirectory=/opt/nawbio
+ExecStart=/usr/bin/java -jar /opt/nawbio/nawbio-api.jar --spring.profiles.active=prod
+Restart=on-failure
+RestartSec=10
+
+# Database Configuration (Spring Boot 표준 환경변수 사용)
+Environment="SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/nawbio"
+Environment="SPRING_DATASOURCE_USERNAME=nawbio_user"
+Environment="SPRING_DATASOURCE_PASSWORD=naw1023!"
+
+# JWT Configuration
+Environment="JWT_SECRET=REPLACE_WITH_ACTUAL_JWT_SECRET"
+
+# Server Configuration
+Environment="SERVER_PORT=8080"
+
+# CORS Configuration (환경에 맞게 수정)
+Environment="CORS_ALLOWED_ORIGINS=*"
+
+# AWS S3 Configuration
+Environment="AWS_ACCESS_KEY=REPLACE_WITH_ACTUAL_ACCESS_KEY"
+Environment="AWS_SECRET_KEY=REPLACE_WITH_ACTUAL_SECRET_KEY"
+Environment="AWS_REGION=ap-northeast-2"
+Environment="S3_BUCKET_NAME=nawbio-storage"
+
+# Hibernate DDL (프로덕션에서는 validate 사용)
+Environment="SPRING_JPA_HIBERNATE_DDL_AUTO=update"
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=nawbio-api
+
+[Install]
+WantedBy=multi-user.target

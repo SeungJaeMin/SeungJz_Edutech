@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(bash:*)",
+      "Bash(wait)",
+      "Bash(git push)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(if [ -f \"E:/Workspace_Other/Woosung/nawbio-web/public/img/ffmpeg-portable/bin/ffmpeg.exe\" ])",
+      "Bash(then echo \"FFmpeg exists\")",
+      "Bash(else echo \"FFmpeg not found - need to download\")",
+      "Bash(fi)",
+      "Bash(cat:*)",
+      "Bash(if [ -f \"./ffmpeg-portable/bin/ffmpeg.exe\" ])",
+      "Bash(else echo \"FFmpeg not found\")",
+      "Bash(./ffmpeg-portable/bin/ffmpeg.exe:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

@@ -1,0 +1,64 @@
+name: Build and Test
+
+# develop 브랜치나 PR에서는 빌드/테스트만 수행
+on:
+  push:
+    branches: [ develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v3
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+
+    # 백엔드 빌드 및 테스트
+    - name: Build and Test Backend
+      run: |
+        cd nawbio-api
+        chmod +x gradlew
+        ./gradlew clean build test
+
+    # 프론트엔드 빌드 및 테스트
+    - name: Build and Test Frontend
+      run: |
+        cd nawbio-web
+        npm ci
+        npm run build
+        # npm test (테스트가 있는 경우)
+
+    # 테스트 결과 업로드
+    - name: Upload Test Results
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: test-results
+        path: |
+          nawbio-api/build/reports/tests/
+          nawbio-web/coverage/
+
+    - name: Comment PR
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v6
+      with:
+        script: |
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: '✅ 빌드 및 테스트 통과!'
+          })

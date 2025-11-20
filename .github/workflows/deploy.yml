@@ -1,0 +1,164 @@
+name: Deploy to EC2
+
+# main 브랜치에 푸시될 때 자동 배포
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:  # 수동 실행 가능
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    # 1. 코드 체크아웃
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    # 2. Java 17 설치 (백엔드 빌드용)
+    - name: Set up JDK 17
+      uses: actions/setup-java@v3
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    # 3. Node.js 설치 (프론트엔드 빌드용)
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: nawbio-web/package-lock.json
+
+    # 4. 백엔드 빌드
+    - name: Build Backend
+      run: |
+        cd nawbio-api
+        chmod +x gradlew
+        ./gradlew clean bootJar
+
+    # 5. 백엔드 테스트 (선택)
+    - name: Test Backend
+      run: |
+        cd nawbio-api
+        ./gradlew test
+      continue-on-error: true  # 테스트 실패해도 배포 진행
+
+    # 6. 프론트엔드 빌드
+    - name: Build Frontend
+      env:
+        REACT_APP_API_URL: https://api.nawbio.com
+      run: |
+        cd nawbio-web
+        npm ci
+        npm run build
+
+    # 7. EC2 SSH 키 설정
+    - name: Setup SSH
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+
+    # 8. 백엔드 배포
+    - name: Deploy Backend to EC2
+      env:
+        EC2_HOST: ${{ secrets.EC2_HOST }}
+        EC2_USERNAME: ${{ secrets.EC2_USERNAME }}
+      run: |
+        # JAR 파일 업로드
+        scp -i ~/.ssh/id_rsa \
+          nawbio-api/build/libs/nawbio-api-0.0.1-SNAPSHOT.jar \
+          $EC2_USERNAME@$EC2_HOST:/home/$EC2_USERNAME/nawbio-api-new.jar
+
+        # 서비스 재시작
+        ssh -i ~/.ssh/id_rsa $EC2_USERNAME@$EC2_HOST << 'ENDSSH'
+          # 백업
+          if [ -f ~/nawbio-api.jar ]; then
+            mkdir -p ~/backups
+            cp ~/nawbio-api.jar ~/backups/nawbio-api-backup-$(date +%Y%m%d-%H%M%S).jar
+          fi
+
+          # JAR 교체
+          mv ~/nawbio-api-new.jar ~/nawbio-api.jar
+
+          # 서비스 재시작
+          sudo systemctl restart nawbio-api
+
+          # 상태 확인
+          sleep 5
+          sudo systemctl status nawbio-api
+        ENDSSH
+
+    # 9. 프론트엔드 배포
+    - name: Deploy Frontend to EC2
+      env:
+        EC2_HOST: ${{ secrets.EC2_HOST }}
+        EC2_USERNAME: ${{ secrets.EC2_USERNAME }}
+      run: |
+        # 빌드 파일 업로드 (tar로 압축해서 빠르게)
+        cd nawbio-web
+        tar -czf build.tar.gz build
+        scp -i ~/.ssh/id_rsa build.tar.gz $EC2_USERNAME@$EC2_HOST:/tmp/
+
+        # EC2에서 압축 해제 및 배포
+        ssh -i ~/.ssh/id_rsa $EC2_USERNAME@$EC2_HOST << 'ENDSSH'
+          # 백업
+          if [ -d /var/www/nawbio-web/build ]; then
+            sudo mkdir -p /var/www/nawbio-web/backups
+            sudo cp -r /var/www/nawbio-web/build \
+              /var/www/nawbio-web/backups/build-backup-$(date +%Y%m%d-%H%M%S)
+          fi
+
+          # 압축 해제
+          cd /tmp
+          tar -xzf build.tar.gz
+
+          # 파일 복사
+          sudo rm -rf /var/www/nawbio-web/build/*
+          sudo cp -r build/* /var/www/nawbio-web/build/
+
+          # 권한 설정
+          sudo chown -R nginx:nginx /var/www/nawbio-web/build
+          sudo chmod -R 755 /var/www/nawbio-web/build
+
+          # 정리
+          rm -rf /tmp/build /tmp/build.tar.gz
+        ENDSSH
+
+    # 10. 헬스체크
+    - name: Health Check
+      env:
+        EC2_HOST: ${{ secrets.EC2_HOST }}
+        EC2_USERNAME: ${{ secrets.EC2_USERNAME }}
+      run: |
+        sleep 10
+
+        # 백엔드 헬스체크
+        ssh -i ~/.ssh/id_rsa $EC2_USERNAME@$EC2_HOST \
+          'curl -f http://localhost:8080/api/health || exit 1'
+
+        echo "✅ Backend is healthy"
+
+        # 프론트엔드 헬스체크
+        ssh -i ~/.ssh/id_rsa $EC2_USERNAME@$EC2_HOST \
+          'curl -f -I http://localhost || exit 1'
+
+        echo "✅ Frontend is healthy"
+
+    # 11. 배포 성공 알림 (선택)
+    - name: Notify Success
+      if: success()
+      run: |
+        echo "🎉 배포 성공!"
+        echo "Commit: ${{ github.sha }}"
+        echo "Author: ${{ github.actor }}"
+
+    # 12. 배포 실패 알림
+    - name: Notify Failure
+      if: failure()
+      run: |
+        echo "❌ 배포 실패!"
+        echo "Commit: ${{ github.sha }}"
+        echo "Author: ${{ github.actor }}"
