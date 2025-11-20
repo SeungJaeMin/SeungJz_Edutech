@@ -41,6 +41,11 @@ const LectureCreatePage = () => {
     ],
   });
 
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+  const [videoPreview, setVideoPreview] = useState<string>('');
+  const [thumbnailPreview, setThumbnailPreview] = useState<string>('');
+
   const handleLectureChange = (field: keyof LectureInput, value: any) => {
     setLecture(prev => ({ ...prev, [field]: value }));
   };
@@ -51,11 +56,97 @@ const LectureCreatePage = () => {
     setLecture(prev => ({ ...prev, components: newComponents }));
   };
 
+  const handleVideoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // 파일 크기 검증 (500MB 제한)
+      if (file.size > 500 * 1024 * 1024) {
+        alert('비디오 파일은 500MB 이하만 업로드 가능합니다.');
+        return;
+      }
+
+      // 파일 형식 검증
+      const allowedTypes = ['video/mp4', 'video/webm', 'video/ogg', 'video/quicktime'];
+      if (!allowedTypes.includes(file.type)) {
+        alert('지원하는 비디오 형식: MP4, WebM, OGG, MOV');
+        return;
+      }
+
+      setVideoFile(file);
+
+      // 비디오 미리보기
+      const videoUrl = URL.createObjectURL(file);
+      setVideoPreview(videoUrl);
+
+      // 비디오 메타데이터 로드 (duration 자동 설정)
+      const video = document.createElement('video');
+      video.preload = 'metadata';
+      video.onloadedmetadata = () => {
+        URL.revokeObjectURL(videoUrl);
+        setLecture(prev => ({ ...prev, duration: Math.floor(video.duration) }));
+      };
+      video.src = videoUrl;
+    }
+  };
+
+  const handleThumbnailFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // 파일 크기 검증 (5MB 제한)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('썸네일 이미지는 5MB 이하만 업로드 가능합니다.');
+        return;
+      }
+
+      // 파일 형식 검증
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+      if (!allowedTypes.includes(file.type)) {
+        alert('지원하는 이미지 형식: JPG, PNG, WebP, GIF');
+        return;
+      }
+
+      setThumbnailFile(file);
+
+      // 썸네일 미리보기
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setThumbnailPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!videoFile) {
+      alert('비디오 파일을 선택해주세요.');
+      return;
+    }
+
+    // FormData 생성 (파일 업로드용)
+    const formData = new FormData();
+    formData.append('videoFile', videoFile);
+    if (thumbnailFile) {
+      formData.append('thumbnailFile', thumbnailFile);
+    }
+
+    // JSON 데이터 추가
+    formData.append('lecture', JSON.stringify({
+      title: lecture.title,
+      artist: lecture.artist,
+      level: lecture.level,
+      type: lecture.type,
+      duration: lecture.duration,
+      components: lecture.components,
+    }));
+
     // TODO: API 호출
-    console.log('Submitting lecture:', lecture);
+    console.log('Submitting lecture with files:', {
+      lecture,
+      videoFile,
+      thumbnailFile,
+    });
 
     // 임시: 성공 시 목록 페이지로 이동
     alert('강의가 성공적으로 등록되었습니다!');
@@ -132,41 +223,70 @@ const LectureCreatePage = () => {
 
         {/* 비디오 섹션 */}
         <Section>
-          <SectionTitle>🎥 비디오 정보</SectionTitle>
+          <SectionTitle>🎥 비디오 업로드</SectionTitle>
 
           <FormGroup>
-            <Label>비디오 URL *</Label>
-            <Input
-              type="url"
-              value={lecture.videoUrl}
-              onChange={(e) => handleLectureChange('videoUrl', e.target.value)}
-              placeholder="https://example.com/video.mp4"
-              required
-            />
-            <HelpText>YouTube, Vimeo 등의 영상 URL을 입력하세요</HelpText>
+            <Label>비디오 파일 *</Label>
+            <FileInputWrapper>
+              <FileInput
+                type="file"
+                id="videoFile"
+                accept="video/mp4,video/webm,video/ogg,video/quicktime"
+                onChange={handleVideoFileChange}
+                required
+              />
+              <FileInputLabel htmlFor="videoFile">
+                {videoFile ? `✓ ${videoFile.name}` : '📁 비디오 파일 선택'}
+              </FileInputLabel>
+            </FileInputWrapper>
+            <HelpText>
+              지원 형식: MP4, WebM, OGG, MOV (최대 500MB)
+              {videoFile && ` • 파일 크기: ${(videoFile.size / (1024 * 1024)).toFixed(2)}MB`}
+            </HelpText>
+            {videoPreview && (
+              <VideoPreview controls>
+                <source src={videoPreview} type={videoFile?.type} />
+              </VideoPreview>
+            )}
           </FormGroup>
 
           <FormGroup>
-            <Label>썸네일 URL</Label>
-            <Input
-              type="url"
-              value={lecture.thumbnailUrl}
-              onChange={(e) => handleLectureChange('thumbnailUrl', e.target.value)}
-              placeholder="https://example.com/thumbnail.jpg"
-            />
+            <Label>썸네일 이미지</Label>
+            <FileInputWrapper>
+              <FileInput
+                type="file"
+                id="thumbnailFile"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                onChange={handleThumbnailFileChange}
+              />
+              <FileInputLabel htmlFor="thumbnailFile">
+                {thumbnailFile ? `✓ ${thumbnailFile.name}` : '🖼️ 썸네일 이미지 선택'}
+              </FileInputLabel>
+            </FileInputWrapper>
+            <HelpText>
+              지원 형식: JPG, PNG, WebP, GIF (최대 5MB)
+              {thumbnailFile && ` • 파일 크기: ${(thumbnailFile.size / (1024 * 1024)).toFixed(2)}MB`}
+            </HelpText>
+            {thumbnailPreview && (
+              <ThumbnailPreview src={thumbnailPreview} alt="썸네일 미리보기" />
+            )}
           </FormGroup>
 
           <FormGroup>
-            <Label>비디오 길이 (초) *</Label>
+            <Label>비디오 길이 (초)</Label>
             <Input
               type="number"
               value={lecture.duration}
               onChange={(e) => handleLectureChange('duration', Number(e.target.value))}
-              placeholder="300"
+              placeholder="비디오 파일 선택 시 자동 입력됩니다"
               min="0"
-              required
+              disabled={!!videoFile}
             />
-            <HelpText>초 단위로 입력하세요 (예: 5분 = 300초)</HelpText>
+            <HelpText>
+              {videoFile
+                ? '비디오 파일에서 자동으로 추출되었습니다'
+                : '비디오 파일을 선택하면 자동으로 입력됩니다'}
+            </HelpText>
           </FormGroup>
         </Section>
 
@@ -465,4 +585,57 @@ const SubmitButton = styled(Button)`
   &:hover {
     background: ${props => props.theme.colors.secondary};
   }
+`;
+
+const FileInputWrapper = styled.div`
+  position: relative;
+`;
+
+const FileInput = styled.input`
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  overflow: hidden;
+`;
+
+const FileInputLabel = styled.label`
+  display: inline-block;
+  width: 100%;
+  padding: ${props => props.theme.spacing.lg};
+  font-size: 1rem;
+  font-weight: 500;
+  text-align: center;
+  color: ${props => props.theme.colors.primary};
+  background: ${props => props.theme.colors.gray[50]};
+  border: 2px dashed ${props => props.theme.colors.gray[300]};
+  border-radius: ${props => props.theme.borderRadius.md};
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background: ${props => props.theme.colors.gray[100]};
+    border-color: ${props => props.theme.colors.primary};
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+`;
+
+const VideoPreview = styled.video`
+  width: 100%;
+  max-height: 400px;
+  margin-top: ${props => props.theme.spacing.md};
+  border-radius: ${props => props.theme.borderRadius.md};
+  background: ${props => props.theme.colors.dark};
+`;
+
+const ThumbnailPreview = styled.img`
+  width: 100%;
+  max-width: 300px;
+  height: auto;
+  margin-top: ${props => props.theme.spacing.md};
+  border-radius: ${props => props.theme.borderRadius.md};
+  border: 1px solid ${props => props.theme.colors.gray[200]};
 `;
