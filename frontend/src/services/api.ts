@@ -1,40 +1,69 @@
-import axios from 'axios';
-
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
-const api = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
+interface RequestOptions extends RequestInit {
+  headers?: Record<string, string>;
+}
 
-// Request interceptor
-api.interceptors.request.use(
-  (config) => {
-    // JWT 토큰이 있으면 추가
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
+async function request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
+  const url = `${API_BASE_URL}${endpoint}`;
 
-// Response interceptor
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      // 인증 실패 시 로그인 페이지로 이동
-      localStorage.removeItem('token');
-      window.location.href = '/';
-    }
-    return Promise.reject(error);
+  // 기본 헤더 설정
+  const headers: Record<string, string> = {
+    ...options.headers,
+  };
+
+  // JSON 요청인 경우에만 Content-Type 추가
+  if (options.body && !(options.body instanceof FormData)) {
+    headers['Content-Type'] = 'application/json';
   }
-);
+
+  // JWT 토큰 추가
+  const token = localStorage.getItem('token');
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(url, {
+    ...options,
+    headers,
+  });
+
+  // 401 에러 처리
+  if (response.status === 401) {
+    localStorage.removeItem('token');
+    window.location.href = '/';
+    throw new Error('Unauthorized');
+  }
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: response.statusText }));
+    throw new Error(error.message || 'Request failed');
+  }
+
+  // 204 No Content 처리
+  if (response.status === 204) {
+    return null as T;
+  }
+
+  return response.json();
+}
+
+const api = {
+  get: <T>(endpoint: string) => request<T>(endpoint, { method: 'GET' }),
+
+  post: <T>(endpoint: string, data?: any) =>
+    request<T>(endpoint, {
+      method: 'POST',
+      body: data instanceof FormData ? data : JSON.stringify(data),
+    }),
+
+  put: <T>(endpoint: string, data?: any) =>
+    request<T>(endpoint, {
+      method: 'PUT',
+      body: data instanceof FormData ? data : JSON.stringify(data),
+    }),
+
+  delete: <T>(endpoint: string) => request<T>(endpoint, { method: 'DELETE' }),
+};
 
 export default api;

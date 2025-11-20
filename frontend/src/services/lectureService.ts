@@ -62,45 +62,35 @@ class LectureService {
       formData.append('thumbnailFile', thumbnailFile);
     }
 
-    const response = await api.post<LectureResponse>('/api/lectures', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-
-    return response.data;
+    return api.post<LectureResponse>('/api/lectures', formData);
   }
 
   /**
    * 모든 강의 조회
    */
   async getAllLectures(): Promise<LectureResponse[]> {
-    const response = await api.get<LectureResponse[]>('/api/lectures');
-    return response.data;
+    return api.get<LectureResponse[]>('/api/lectures');
   }
 
   /**
    * 특정 강의 조회
    */
   async getLecture(id: number): Promise<LectureResponse> {
-    const response = await api.get<LectureResponse>(`/api/lectures/${id}`);
-    return response.data;
+    return api.get<LectureResponse>(`/api/lectures/${id}`);
   }
 
   /**
    * 타입별 강의 조회
    */
   async getLecturesByType(type: 'MUSIC' | 'DRAMA' | 'TALK'): Promise<LectureResponse[]> {
-    const response = await api.get<LectureResponse[]>(`/api/lectures/type/${type}`);
-    return response.data;
+    return api.get<LectureResponse[]>(`/api/lectures/type/${type}`);
   }
 
   /**
    * 레벨별 강의 조회
    */
   async getLecturesByLevel(level: number): Promise<LectureResponse[]> {
-    const response = await api.get<LectureResponse[]>(`/api/lectures/level/${level}`);
-    return response.data;
+    return api.get<LectureResponse[]>(`/api/lectures/level/${level}`);
   }
 
   /**
@@ -124,20 +114,14 @@ class LectureService {
       formData.append('thumbnailFile', thumbnailFile);
     }
 
-    const response = await api.put<LectureResponse>(`/api/lectures/${id}`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-
-    return response.data;
+    return api.put<LectureResponse>(`/api/lectures/${id}`, formData);
   }
 
   /**
    * 강의 삭제
    */
   async deleteLecture(id: number): Promise<void> {
-    await api.delete(`/api/lectures/${id}`);
+    return api.delete<void>(`/api/lectures/${id}`);
   }
 }
 
