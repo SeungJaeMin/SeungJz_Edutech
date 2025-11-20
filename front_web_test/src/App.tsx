@@ -6,6 +6,7 @@ import { LevelSelectionPage } from './pages/LevelSelectionPage'
 import { MainPage } from './pages/MainPage'
 import { LectureSelectionPage } from './pages/LectureSelectionPage'
 import { LectureResultPage } from './pages/LectureResultPage'
+import { PhoneInterviewPage } from './pages/PhoneInterviewPage'
 import './App.css'
 
 function App() {
@@ -77,7 +78,7 @@ function App() {
         }}>
           <p style={{ marginBottom: '20px' }}>Video Playing...</p>
           <button
-            onClick={() => setScreen(8)}
+            onClick={() => setScreen(9)}
             style={{
               backgroundColor: '#8CC63F',
               border: 'none',
@@ -88,9 +89,10 @@ function App() {
               cursor: 'pointer',
               fontFamily: 'Fredoka, Inter, sans-serif',
               fontWeight: 600,
+              marginBottom: '20px',
             }}
           >
-            Complete Lecture
+            Start 3rd Stage (Phone Interview)
           </button>
         </div>
       )}
@@ -99,6 +101,15 @@ function App() {
       {screen === 8 && (
         <LectureResultPage
           onBackToLectures={() => setScreen(6)}
+        />
+      )}
+
+      {/* 화면 9: Phone Interview Page (3rd Stage) */}
+      {screen === 9 && (
+        <PhoneInterviewPage
+          userId="user123"
+          onComplete={() => setScreen(8)}
+          onBack={() => setScreen(7)}
         />
       )}
 
