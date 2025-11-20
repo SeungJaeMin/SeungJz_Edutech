@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
+import lectureService from '../services/lectureService';
 
 interface ComponentInput {
   type: 'QUESTION' | 'INFO';
@@ -124,33 +125,36 @@ const LectureCreatePage = () => {
       return;
     }
 
-    // FormData 생성 (파일 업로드용)
-    const formData = new FormData();
-    formData.append('videoFile', videoFile);
-    if (thumbnailFile) {
-      formData.append('thumbnailFile', thumbnailFile);
+    try {
+      // API 호출
+      const lectureData = {
+        title: lecture.title,
+        artist: lecture.artist,
+        level: lecture.level,
+        type: lecture.type,
+        duration: lecture.duration,
+        components: lecture.components.map(comp => ({
+          type: comp.type,
+          startTime: comp.startTime,
+          question: comp.question,
+          expectedAnswer: comp.expectedAnswer,
+          keywords: comp.keywords,
+        })),
+      };
+
+      const response = await lectureService.createLecture(
+        lectureData,
+        videoFile,
+        thumbnailFile || undefined
+      );
+
+      console.log('Lecture created successfully:', response);
+      alert(`강의가 성공적으로 등록되었습니다!\nID: ${response.id}`);
+      navigate('/lectures');
+    } catch (error: any) {
+      console.error('Failed to create lecture:', error);
+      alert(`강의 등록 실패: ${error.response?.data?.message || error.message}`);
     }
-
-    // JSON 데이터 추가
-    formData.append('lecture', JSON.stringify({
-      title: lecture.title,
-      artist: lecture.artist,
-      level: lecture.level,
-      type: lecture.type,
-      duration: lecture.duration,
-      components: lecture.components,
-    }));
-
-    // TODO: API 호출
-    console.log('Submitting lecture with files:', {
-      lecture,
-      videoFile,
-      thumbnailFile,
-    });
-
-    // 임시: 성공 시 목록 페이지로 이동
-    alert('강의가 성공적으로 등록되었습니다!');
-    navigate('/lectures');
   };
 
   const handleCancel = () => {
