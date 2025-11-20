@@ -1,0 +1,118 @@
+name: Deploy dev2 to EC2
+
+on:
+  push:
+    branches:
+      - dev2
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x backend/gradlew
+
+      - name: Build with Gradle
+        run: |
+          cd backend
+          ./gradlew clean bootJar
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H 43.203.228.241 >> ~/.ssh/known_hosts
+
+      - name: Deploy to EC2
+        run: |
+          # Upload JAR file
+          scp -i ~/.ssh/deploy_key \
+            backend/build/libs/edutech-0.0.1-SNAPSHOT.jar \
+            ubuntu@43.203.228.241:/tmp/edutech-api.jar
+
+          # Deploy and restart service
+          ssh -i ~/.ssh/deploy_key ubuntu@43.203.228.241 << 'EOF'
+            # Create app directory if not exists
+            sudo mkdir -p /opt/edutech
+
+            # Backup existing jar if exists
+            if [ -f /opt/edutech/edutech-api.jar ]; then
+              sudo cp /opt/edutech/edutech-api.jar /opt/edutech/edutech-api.jar.backup
+            fi
+
+            # Move new jar
+            sudo mv /tmp/edutech-api.jar /opt/edutech/edutech-api.jar
+            sudo chown ubuntu:ubuntu /opt/edutech/edutech-api.jar
+
+            # Stop existing process if running
+            if pgrep -f "edutech-api.jar" > /dev/null; then
+              echo "Stopping existing application..."
+              sudo pkill -f "edutech-api.jar" || true
+              sleep 3
+            fi
+
+            # Start application
+            echo "Starting application..."
+            nohup java -jar /opt/edutech/edutech-api.jar \
+              --spring.profiles.active=prod \
+              > /opt/edutech/application.log 2>&1 &
+
+            sleep 5
+
+            # Check if process is running
+            if pgrep -f "edutech-api.jar" > /dev/null; then
+              echo "✅ Application started successfully"
+            else
+              echo "❌ Application failed to start"
+              tail -50 /opt/edutech/application.log
+              exit 1
+            fi
+          EOF
+
+      - name: Health Check
+        run: |
+          echo "Waiting for application to start..."
+          sleep 15
+
+          # Try health check (adjust port if needed)
+          for i in {1..5}; do
+            if ssh -i ~/.ssh/deploy_key ubuntu@43.203.228.241 \
+              'curl -f http://localhost:8080/actuator/health 2>/dev/null || curl -f http://localhost:8080/api/health 2>/dev/null'; then
+              echo "✅ Health check passed!"
+              exit 0
+            fi
+            echo "Health check attempt $i/5 failed, retrying..."
+            sleep 5
+          done
+
+          echo "⚠️ Health check failed after 5 attempts"
+          echo "Check logs manually with: ssh ubuntu@43.203.228.241 'tail -100 /opt/edutech/application.log'"
+          exit 1
+
+      - name: Notify Success
+        if: success()
+        run: |
+          echo "🎉 Deployment successful!"
+          echo "Branch: dev2"
+          echo "Commit: ${{ github.sha }}"
+          echo "Author: ${{ github.actor }}"
+
+      - name: Notify Failure
+        if: failure()
+        run: |
+          echo "❌ Deployment failed!"
+          echo "Branch: dev2"
+          echo "Commit: ${{ github.sha }}"
+          echo "Author: ${{ github.actor }}"
