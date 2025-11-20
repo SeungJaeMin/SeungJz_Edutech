@@ -2,7 +2,7 @@
 // 파일: HT_SeungJz (qNH0gG3M2WGNwK1ygMhG5e)
 // 노드: 48:1174, 48:1186, 48:1202
 
-import React, { useState, useRef, TouchEvent } from 'react';
+import React, { useState, useRef, type TouchEvent } from 'react';
 
 interface Lecture {
   id: string;
