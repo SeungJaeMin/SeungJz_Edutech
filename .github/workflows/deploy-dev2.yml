@@ -40,10 +40,10 @@ jobs:
           # Upload JAR file
           scp -i ~/.ssh/deploy_key \
             backend/build/libs/nawbio-api-0.0.1-SNAPSHOT.jar \
-            ubuntu@43.203.228.241:/tmp/edutech-api.jar
+            ec2-user@43.203.228.241:/tmp/edutech-api.jar
 
           # Deploy and restart service
-          ssh -i ~/.ssh/deploy_key ubuntu@43.203.228.241 << 'EOF'
+          ssh -i ~/.ssh/deploy_key ec2-user@43.203.228.241 << 'EOF'
             # Create app directory if not exists
             sudo mkdir -p /opt/edutech
 
@@ -88,7 +88,7 @@ jobs:
 
           # Try health check (adjust port if needed)
           for i in {1..5}; do
-            if ssh -i ~/.ssh/deploy_key ubuntu@43.203.228.241 \
+            if ssh -i ~/.ssh/deploy_key ec2-user@43.203.228.241 \
               'curl -f http://localhost:8080/actuator/health 2>/dev/null || curl -f http://localhost:8080/api/health 2>/dev/null'; then
               echo "✅ Health check passed!"
               exit 0
@@ -98,7 +98,7 @@ jobs:
           done
 
           echo "⚠️ Health check failed after 5 attempts"
-          echo "Check logs manually with: ssh ubuntu@43.203.228.241 'tail -100 /opt/edutech/application.log'"
+          echo "Check logs manually with: ssh ec2-user@43.203.228.241 'tail -100 /opt/edutech/application.log'"
           exit 1
 
       - name: Notify Success
