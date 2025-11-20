@@ -2,77 +2,278 @@
 
 ## 시스템 개요
 
-3-Tier 아키텍처 기반의 모바일 우선 한국어 학습 플랫폼
+**nawbio-api/nawbio-web 구조를 참조한 3-Tier 아키텍처 기반 한국어 학습 플랫폼**
 
 ```
-┌─────────────────┐
-│   Mobile Web    │  React SPA
-│   (Frontend)    │  Web Speech API
-└────────┬────────┘
-         │ HTTPS/REST
-         │
-┌────────▼────────┐
-│  Spring Boot    │  Business Logic
-│   (Backend)     │  Video Streaming
-└────────┬────────┘
-         │ JDBC
-         │
-┌────────▼────────┐
-│   PostgreSQL    │  Persistent Storage
-│   (Database)    │
-└─────────────────┘
+┌─────────────────────────────────────────────────────┐
+│               Frontend (React + TypeScript)          │
+│   - Mobile-First Responsive Design                  │
+│   - React Router v7                                  │
+│   - styled-components (CSS-in-JS)                   │
+│   - i18next (다국어 지원)                             │
+│   - Axios API Client                                 │
+└────────────────────┬────────────────────────────────┘
+                     │ HTTPS/REST API
+                     │ /api/v1/*
+┌────────────────────▼────────────────────────────────┐
+│          Backend (Spring Boot 3.2)                  │
+│   - RESTful API                                     │
+│   - JWT Authentication (Header-based)               │
+│   - Spring Security                                 │
+│   - Spring Data JPA                                 │
+│   - Springdoc OpenAPI (Swagger)                     │
+│   - Video Streaming (AWS S3 + CloudFront)          │
+└────────────────────┬────────────────────────────────┘
+                     │ JDBC
+┌────────────────────▼────────────────────────────────┐
+│              Database (PostgreSQL 14)                │
+│   - 사용자 관리 (users)                              │
+│   - 학습 컨텐츠 (lectures, components)               │
+│   - 학습 진도 (user_progress, answer_history)        │
+│   - 면접 세션 (interview_sessions, qa_pairs)         │
+│   - 감정 분석 (emotion_analysis)                     │
+└─────────────────────────────────────────────────────┘
 
-┌─────────────────┐
-│  ML Services    │  KoSpeech STT
-│  (Python/Flask) │  DeepFace (Emotion)
-│                 │  GPT API
-└─────────────────┘
+┌─────────────────────────────────────────────────────┐
+│          ML Services (Python Flask/FastAPI)         │
+│   - STT Service: KoSpeech (한국어 특화 STT)         │
+│   - Emotion Service: DeepFace (오픈소스)            │
+│   - Feedback Service: GPT-4 (질문 생성 및 분석)     │
+└─────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────┐
+│              Infrastructure (Docker)                 │
+│   - docker-compose.yml (로컬 개발)                  │
+│   - docker-compose.prod.yml (프로덕션)              │
+│   - AWS S3 (비디오 저장소)                          │
+│   - CloudFront CDN (비디오 스트리밍)                │
+└─────────────────────────────────────────────────────┘
 ```
 
 ## 계층별 상세 설계
 
-### 1. Frontend Layer (React)
+### 1. Frontend Layer (React + TypeScript)
 
 #### 주요 책임
-- 모바일 최적화 UI/UX
+- Mobile-First Responsive Design
+- JWT 기반 인증 관리
 - 비디오 재생 및 동기화
-- 1-2단계 클라이언트 측 음성인식
+- 음성인식 (Web Speech API / Whisper)
+- 실시간 감정 분석 표시
 - 학습 진도 시각화
 
-#### 핵심 컴포넌트
+#### nawbio-web 기반 프로젝트 구조
 
 ```
-src/
-├── components/
-│   ├── auth/
-│   │   ├── SocialLogin.jsx        # 소셜 로그인 UI
-│   │   └── AuthCallback.jsx       # OAuth 콜백 처리
-│   ├── learning/
-│   │   ├── LectureList.jsx        # 학습 컨텐츠 목록
-│   │   ├── VideoPlayer.jsx        # 비디오 재생기 (Video.js)
-│   │   ├── QuestionOverlay.jsx    # 질문 오버레이
-│   │   ├── VoiceInput.jsx         # 음성 입력 (Web Speech API)
-│   │   └── ResultCard.jsx         # 결과 및 피드백
-│   ├── interview/
-│   │   ├── PromptInput.jsx        # 3단계 프롬프트 입력
-│   │   ├── RealTimeQA.jsx         # 실시간 질문/답변
-│   │   ├── VideoRecorder.jsx      # 3단계 비디오 녹화
-│   │   ├── EmotionOverlay.jsx     # 실시간 감정 표시
-│   │   └── TimelineFeedback.jsx   # 타임라인별 피드백
-│   └── review/
-│       └── LearningReview.jsx     # 학습 복기
-├── services/
-│   ├── api.js                     # Axios 기반 API 클라이언트
-│   ├── speechRecognition.js       # 음성인식 (서버로 전송)
-│   ├── videoSync.js               # 비디오-질문 동기화
-│   └── videoCapture.js            # 3단계 비디오 프레임 캡처
-├── hooks/
-│   ├── useAuth.js                 # 인증 상태 관리
-│   ├── useSpeechRecognition.js    # 음성인식 훅
-│   └── useLearning.js             # 학습 상태 관리
-└── store/
-    ├── authSlice.js               # Redux: 사용자 인증
-    └── learningSlice.js           # Redux: 학습 진도
+frontend/
+├── public/
+│   ├── index.html
+│   ├── favicon.ico
+│   └── assets/
+│       ├── images/
+│       └── videos/
+│
+├── src/
+│   ├── api/                       # API 클라이언트 (nawbio 참조)
+│   │   ├── client.ts              # Axios 인스턴스 + Interceptor
+│   │   ├── auth.ts                # POST /api/v1/auth/login, /register
+│   │   ├── lecture.ts             # GET /api/v1/lectures
+│   │   ├── learning.ts            # POST /api/v1/learning/submit
+│   │   ├── interview.ts           # POST /api/v1/interview/start
+│   │   └── types.ts               # API 타입 정의
+│   │
+│   ├── components/                # 재사용 컴포넌트
+│   │   ├── common/
+│   │   │   ├── Header.tsx
+│   │   │   ├── Footer.tsx
+│   │   │   ├── Navigation.tsx
+│   │   │   ├── Loading.tsx
+│   │   │   └── ErrorBoundary.tsx
+│   │   ├── auth/
+│   │   │   ├── LoginForm.tsx
+│   │   │   ├── RegisterForm.tsx
+│   │   │   └── ProtectedRoute.tsx
+│   │   ├── learning/
+│   │   │   ├── LectureCard.tsx
+│   │   │   ├── VideoPlayer.tsx    # react-player 또는 video.js
+│   │   │   ├── QuestionOverlay.tsx
+│   │   │   ├── VoiceRecorder.tsx
+│   │   │   └── AnswerFeedback.tsx
+│   │   └── interview/
+│   │       ├── InterviewPrompt.tsx
+│   │       ├── InterviewCamera.tsx
+│   │       ├── EmotionIndicator.tsx
+│   │       └── TimelineFeedback.tsx
+│   │
+│   ├── pages/                     # 페이지 컴포넌트
+│   │   ├── Home.tsx               # 메인 페이지
+│   │   ├── Login.tsx
+│   │   ├── Register.tsx
+│   │   ├── LectureList.tsx        # 학습 컨텐츠 목록
+│   │   ├── LearningPage.tsx       # 1-2단계 학습
+│   │   ├── InterviewPage.tsx      # 3단계 면접
+│   │   ├── ReviewPage.tsx         # 학습 복기
+│   │   └── Profile.tsx
+│   │
+│   ├── hooks/                     # Custom Hooks
+│   │   ├── useAuth.ts             # JWT 토큰 관리
+│   │   ├── useSpeechRecognition.ts
+│   │   ├── useVideoRecorder.ts
+│   │   ├── useLearningProgress.ts
+│   │   └── useWebSocket.ts        # 3단계 WebSocket
+│   │
+│   ├── store/                     # Context API 또는 Zustand
+│   │   ├── authContext.tsx
+│   │   ├── learningContext.tsx
+│   │   └── interviewContext.tsx
+│   │
+│   ├── styles/                    # styled-components
+│   │   ├── GlobalStyle.ts
+│   │   ├── theme.ts               # 색상, 폰트 테마
+│   │   └── mixins.ts              # 재사용 스타일
+│   │
+│   ├── i18n/                      # 다국어 지원 (i18next)
+│   │   ├── index.ts
+│   │   └── locales/
+│   │       ├── ko.json
+│   │       └── en.json
+│   │
+│   ├── utils/
+│   │   ├── localStorage.ts        # 토큰 저장
+│   │   ├── videoUtils.ts
+│   │   └── speechUtils.ts
+│   │
+│   ├── types/
+│   │   ├── auth.ts
+│   │   ├── lecture.ts
+│   │   └── interview.ts
+│   │
+│   ├── App.tsx                    # 메인 App 컴포넌트
+│   ├── index.tsx                  # Entry Point
+│   └── react-app-env.d.ts
+│
+├── package.json
+├── tsconfig.json
+├── .env.development
+├── .env.production
+└── vite.config.ts                 # 또는 craco.config.js
+```
+
+#### 핵심 의존성 (package.json)
+
+```json
+{
+  "name": "seungjz-edutech-frontend",
+  "version": "0.1.0",
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^7.9.3",
+    "axios": "^1.6.0",
+    "styled-components": "^6.1.19",
+    "i18next": "^23.15.0",
+    "react-i18next": "^14.1.0",
+    "framer-motion": "^12.23.22",
+    "react-icons": "^4.12.0",
+    "zustand": "^4.5.0",
+    "typescript": "^4.9.5"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.24",
+    "@types/react-dom": "^18.3.7",
+    "@types/styled-components": "^5.1.34",
+    "vite": "^5.0.0",
+    "@vitejs/plugin-react": "^4.2.0"
+  }
+}
+```
+
+#### API 클라이언트 구현 (nawbio 참조)
+
+```typescript
+// src/api/client.ts
+import axios, { AxiosInstance } from 'axios';
+
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080/api/v1';
+
+export const apiClient: AxiosInstance = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: 30000,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Request Interceptor - JWT 토큰 자동 추가
+apiClient.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('accessToken');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+// Response Interceptor - 401 에러 시 로그인 페이지 리다이렉트
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('accessToken');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+```
+
+```typescript
+// src/api/auth.ts
+import { apiClient } from './client';
+import { LoginRequest, RegisterRequest, TokenResponse } from './types';
+
+export const authApi = {
+  login: async (data: LoginRequest): Promise<TokenResponse> => {
+    const response = await apiClient.post('/auth/login', data);
+    return response.data;
+  },
+
+  register: async (data: RegisterRequest): Promise<TokenResponse> => {
+    const response = await apiClient.post('/auth/register', data);
+    return response.data;
+  },
+
+  logout: async (): Promise<void> => {
+    localStorage.removeItem('accessToken');
+  },
+};
+```
+
+```typescript
+// src/api/lecture.ts
+import { apiClient } from './client';
+import { Lecture, Component } from './types';
+
+export const lectureApi = {
+  getAll: async (level?: number): Promise<Lecture[]> => {
+    const response = await apiClient.get('/lectures', {
+      params: { level }
+    });
+    return response.data;
+  },
+
+  getById: async (id: number): Promise<Lecture> => {
+    const response = await apiClient.get(`/lectures/${id}`);
+    return response.data;
+  },
+
+  getComponents: async (lectureId: number): Promise<Component[]> => {
+    const response = await apiClient.get(`/lectures/${lectureId}/components`);
+    return response.data;
+  },
+};
 ```
 
 #### 3단계 비디오 녹화 및 감정 분석
@@ -145,48 +346,192 @@ export const useVideoCapture = () => {
 
 ---
 
-### 2. Backend Layer (Spring Boot)
+### 2. Backend Layer (Spring Boot 3.2)
 
 #### 주요 책임
-- RESTful API 제공
-- 비디오 스트리밍 (Adaptive Bitrate)
+- RESTful API 제공 (`/api/v1/*`)
+- JWT 기반 인증/인가
+- 비디오 스트리밍 (AWS S3 + CloudFront)
 - Lecture 및 Component 관리
-- 3단계 고급 음성인식 처리 (KoSpeech 연동)
-- AI 기반 질문 생성 및 피드백
+- 학습 진도 추적 및 복기
+- ML 서비스 연동 (STT, 감정 분석, GPT 피드백)
 
-#### 패키지 구조
+#### nawbio-api 기반 패키지 구조
 
 ```
 com.seungjz.edutech/
-├── config/
-│   ├── SecurityConfig.java        # Spring Security + OAuth2
-│   ├── WebConfig.java             # CORS, Interceptor
-│   └── S3Config.java              # AWS S3 설정
-├── controller/
-│   ├── AuthController.java        # 로그인/회원가입
-│   ├── LectureController.java     # 학습 컨텐츠 CRUD
-│   ├── LearningController.java    # 학습 진행 API
-│   └── InterviewController.java   # 3단계 실시간 면접
-├── service/
-│   ├── LectureService.java        # Lecture 비즈니스 로직
-│   ├── VideoStreamService.java    # 비디오 스트리밍
-│   ├── SpeechService.java         # 음성인식 오케스트레이션
-│   ├── FeedbackService.java       # AI 피드백 생성
-│   └── ProgressService.java       # 학습 진도 관리
-├── repository/
-│   ├── UserRepository.java
-│   ├── LectureRepository.java
-│   ├── ComponentRepository.java
-│   └── ProgressRepository.java
-├── domain/
-│   ├── User.java
-│   ├── Lecture.java               # 학습 컨텐츠
-│   ├── Component.java             # Lecture 구성요소
-│   ├── Progress.java              # 사용자 진도
-│   └── Feedback.java              # AI 피드백
-└── external/
-    ├── KoSpeechClient.java        # Python ML 서비스 연동
-    └── OpenAIClient.java          # GPT API 연동
+├── common/                        # 공통 모듈 (nawbio 참조)
+│   ├── config/
+│   │   ├── SecurityConfig.java    # Spring Security + JWT
+│   │   ├── WebConfig.java         # CORS, Interceptor
+│   │   ├── S3Config.java          # AWS S3 설정
+│   │   └── SwaggerConfig.java     # Springdoc OpenAPI
+│   ├── exception/
+│   │   ├── GlobalExceptionHandler.java
+│   │   ├── BusinessException.java
+│   │   └── ErrorCode.java
+│   ├── dto/
+│   │   ├── ApiResponse.java       # 통일된 응답 포맷
+│   │   ├── PageResponse.java
+│   │   └── ErrorResponse.java
+│   └── util/
+│       ├── JwtTokenProvider.java
+│       └── FileUploadUtil.java
+│
+├── domain/                        # Domain 기반 설계 (nawbio 참조)
+│   ├── auth/
+│   │   ├── entity/
+│   │   │   └── User.java
+│   │   ├── repository/
+│   │   │   └── UserRepository.java
+│   │   ├── service/
+│   │   │   ├── AuthService.java
+│   │   │   └── UserService.java
+│   │   ├── controller/
+│   │   │   └── AuthController.java  # POST /api/v1/auth/register, /login
+│   │   └── dto/
+│   │       ├── LoginRequest.java
+│   │       ├── RegisterRequest.java
+│   │       └── TokenResponse.java
+│   │
+│   ├── lecture/                   # 학습 컨텐츠 (1-2단계)
+│   │   ├── entity/
+│   │   │   ├── Lecture.java
+│   │   │   └── Component.java
+│   │   ├── repository/
+│   │   │   ├── LectureRepository.java
+│   │   │   └── ComponentRepository.java
+│   │   ├── service/
+│   │   │   ├── LectureService.java
+│   │   │   └── VideoStreamService.java
+│   │   ├── controller/
+│   │   │   └── LectureController.java  # GET /api/v1/lectures
+│   │   └── dto/
+│   │       ├── LectureResponse.java
+│   │       └── ComponentResponse.java
+│   │
+│   ├── learning/                  # 학습 진행 및 답변
+│   │   ├── entity/
+│   │   │   ├── UserProgress.java
+│   │   │   └── AnswerHistory.java
+│   │   ├── repository/
+│   │   │   ├── UserProgressRepository.java
+│   │   │   └── AnswerHistoryRepository.java
+│   │   ├── service/
+│   │   │   ├── LearningService.java
+│   │   │   └── ProgressService.java
+│   │   ├── controller/
+│   │   │   └── LearningController.java  # POST /api/v1/learning/submit
+│   │   └── dto/
+│   │       ├── SubmitAnswerRequest.java
+│   │       └── FeedbackResponse.java
+│   │
+│   ├── interview/                 # 3단계 실시간 면접
+│   │   ├── entity/
+│   │   │   ├── InterviewSession.java
+│   │   │   ├── InterviewQAPair.java
+│   │   │   ├── EmotionAnalysis.java
+│   │   │   └── InterviewFeedback.java
+│   │   ├── repository/
+│   │   │   ├── InterviewSessionRepository.java
+│   │   │   ├── QAPairRepository.java
+│   │   │   ├── EmotionAnalysisRepository.java
+│   │   │   └── FeedbackRepository.java
+│   │   ├── service/
+│   │   │   ├── InterviewService.java
+│   │   │   ├── InterviewWebSocketHandler.java
+│   │   │   └── FeedbackGenerationService.java
+│   │   ├── controller/
+│   │   │   └── InterviewController.java  # POST /api/v1/interview/start
+│   │   └── dto/
+│   │       ├── StartInterviewRequest.java
+│   │       ├── InterviewSessionResponse.java
+│   │       └── TimelineFeedbackResponse.java
+│   │
+│   └── ml/                        # ML 서비스 연동
+│       ├── client/
+│       │   ├── KoSpeechClient.java  # KoSpeech STT 호출
+│       │   ├── EmotionClient.java   # DeepFace 호출
+│       │   └── GPTClient.java       # OpenAI GPT 호출
+│       └── dto/
+│           ├── TranscriptionResponse.java
+│           └── EmotionAnalysisResult.java
+│
+└── EdutechApplication.java        # Main Entry Point
+```
+
+#### 핵심 설정 (application.yml)
+
+```yaml
+spring:
+  application:
+    name: seungjz-edutech-api
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/edutech
+    username: postgres
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
+
+# JWT 설정
+jwt:
+  secret: ${JWT_SECRET:your-256-bit-secret-key-change-in-production}
+  expiration: 86400000  # 24시간
+
+# CORS 설정
+cors:
+  allowed-origins: http://localhost:3000,http://localhost:5173
+  allowed-methods: GET,POST,PUT,DELETE,PATCH,OPTIONS
+  allowed-headers: "*"
+  allow-credentials: true
+
+# AWS S3 설정
+cloud:
+  aws:
+    region:
+      static: ${AWS_REGION:ap-northeast-2}
+    credentials:
+      access-key: ${AWS_ACCESS_KEY}
+      secret-key: ${AWS_SECRET_KEY}
+    s3:
+      bucket: ${S3_BUCKET_NAME}
+
+# ML Services URL
+ml:
+  kospeech:
+    url: ${KOSPEECH_SERVICE_URL:http://localhost:5000}
+  emotion:
+    url: ${EMOTION_SERVICE_URL:http://localhost:5001}
+  gpt:
+    api-key: ${OPENAI_API_KEY}
+    model: gpt-4-turbo
+
+server:
+  port: 8080
+  servlet:
+    context-path: /api/v1
+
+# Swagger
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
 ```
 
 #### 비디오 스트리밍 아키텍처
@@ -394,70 +739,324 @@ CREATE INDEX idx_feedback_session ON feedback(session_id);
 
 음성인식 및 AI 분석을 위한 별도 마이크로서비스
 
-#### 구조
+#### 디렉토리 구조
 
 ```
 ml-services/
-├── kospeech/
-│   ├── app.py                 # Flask API 서버
-│   ├── model_loader.py        # KoSpeech 모델 로드
-│   └── transcribe.py          # 음성→텍스트 변환
-├── feedback/
-│   ├── analyzer.py            # 문맥 분석
-│   └── keyword_extractor.py   # 키워드 추출
-└── requirements.txt
+├── stt-kospeech/                    # KoSpeech STT 서비스
+│   ├── app.py                       # Flask API 서버
+│   ├── kospeech_inference.py        # KoSpeech 추론 로직
+│   ├── audio_processor.py           # 오디오 전처리
+│   ├── requirements.txt
+│   ├── Dockerfile
+│   └── models/                      # 사전 학습 모델 저장
+│       └── conformer_large.pt
+│
+├── emotion-deepface/                # DeepFace 감정 분석
+│   ├── app.py
+│   ├── emotion_analyzer.py
+│   ├── requirements.txt
+│   └── Dockerfile
+│
+└── docker-compose.ml.yml           # ML 서비스 Docker Compose
 ```
 
-#### KoSpeech API 서버
+---
+
+#### KoSpeech STT 서비스 구현
+
+**참조**: https://github.com/sooftware/kospeech
+
+##### 1. requirements.txt
+
+```txt
+# ml-services/stt-kospeech/requirements.txt
+flask==3.0.0
+torch==2.1.0
+torchaudio==2.1.0
+kospeech==1.0.1
+librosa==0.10.1
+scipy==1.11.4
+numpy==1.24.3
+soundfile==0.12.1
+gunicorn==21.2.0
+```
+
+##### 2. KoSpeech 추론 모듈
 
 ```python
-# ml-services/kospeech/app.py
+# ml-services/stt-kospeech/kospeech_inference.py
+import torch
+import torchaudio
+import librosa
+import numpy as np
+from typing import Tuple
+import os
+
+class KoSpeechInference:
+    def __init__(self, model_path: str = 'models/conformer_large.pt'):
+        """
+        KoSpeech 모델 초기화
+
+        모델 다운로드:
+        wget https://github.com/sooftware/kospeech/releases/download/v1.0/conformer_large.pt
+        """
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        print(f"Using device: {self.device}")
+
+        # KoSpeech 모델 로드
+        try:
+            # Option 1: 사전 학습된 모델 로드
+            from kospeech.models import Model
+            self.model = Model.load_model(model_path)
+            self.model.to(self.device)
+            self.model.eval()
+
+            print(f"KoSpeech model loaded from {model_path}")
+        except Exception as e:
+            print(f"Error loading model: {e}")
+            # Fallback: 기본 모델 사용
+            from kospeech.models.conformer import Conformer
+            self.model = Conformer(
+                num_classes=2000,  # 한국어 어휘 크기
+                input_dim=80,
+                encoder_dim=512,
+                num_encoder_layers=17
+            )
+            self.model.to(self.device)
+            self.model.eval()
+
+        # 한국어 어휘 사전 로드
+        self.vocab = self._load_vocabulary()
+
+    def _load_vocabulary(self):
+        """한국어 어휘 사전 로드"""
+        # KoSpeech 기본 한글 어휘
+        vocab_file = 'vocabs/aihub_character_vocabs.csv'
+        if os.path.exists(vocab_file):
+            import pandas as pd
+            df = pd.read_csv(vocab_file)
+            return {idx: char for idx, char in enumerate(df['char'])}
+        else:
+            # 기본 한글 자모 + 특수문자
+            return {i: chr(i) for i in range(0x1100, 0x1200)}
+
+    def preprocess_audio(self, audio_path: str, sample_rate: int = 16000) -> torch.Tensor:
+        """
+        오디오 파일 전처리
+
+        Returns:
+            torch.Tensor: (1, time, mel_bins) 형태의 텐서
+        """
+        # 오디오 로드 (16kHz로 리샘플)
+        waveform, sr = librosa.load(audio_path, sr=sample_rate)
+
+        # Mel-spectrogram 추출 (80 bins)
+        mel_spec = librosa.feature.melspectrogram(
+            y=waveform,
+            sr=sample_rate,
+            n_mels=80,
+            n_fft=512,
+            hop_length=160
+        )
+
+        # Log-scale
+        mel_spec = librosa.power_to_db(mel_spec, ref=np.max)
+
+        # Normalize
+        mel_spec = (mel_spec - mel_spec.mean()) / (mel_spec.std() + 1e-8)
+
+        # PyTorch 텐서로 변환 (1, time, mel_bins)
+        mel_tensor = torch.FloatTensor(mel_spec).transpose(0, 1).unsqueeze(0)
+
+        return mel_tensor
+
+    @torch.no_grad()
+    def transcribe(self, audio_path: str) -> Tuple[str, float]:
+        """
+        음성을 텍스트로 변환
+
+        Args:
+            audio_path: 오디오 파일 경로 (.wav, .mp3 등)
+
+        Returns:
+            (transcript, confidence): 변환된 텍스트와 신뢰도
+        """
+        # 오디오 전처리
+        mel_input = self.preprocess_audio(audio_path).to(self.device)
+
+        # 모델 추론
+        outputs = self.model(mel_input)
+
+        # Greedy Decoding
+        predictions = outputs.argmax(dim=-1).squeeze(0)
+
+        # 토큰 ID → 텍스트 변환
+        transcript = self._decode_predictions(predictions)
+
+        # 신뢰도 계산 (softmax 최대값 평균)
+        confidence = torch.softmax(outputs, dim=-1).max(dim=-1).values.mean().item()
+
+        return transcript, confidence
+
+    def _decode_predictions(self, predictions: torch.Tensor) -> str:
+        """토큰 ID를 텍스트로 디코딩"""
+        chars = []
+        for token_id in predictions.cpu().numpy():
+            if token_id in self.vocab:
+                chars.append(self.vocab[token_id])
+
+        # CTC 중복 제거 (예: "ㅎㅎ안안녕" → "안녕")
+        text = ''.join(chars)
+        text = self._remove_ctc_duplicates(text)
+
+        return text.strip()
+
+    def _remove_ctc_duplicates(self, text: str) -> str:
+        """CTC 중복 문자 제거"""
+        if not text:
+            return text
+
+        result = [text[0]]
+        for char in text[1:]:
+            if char != result[-1]:
+                result.append(char)
+
+        return ''.join(result)
+
+# 전역 인스턴스 (서버 시작 시 한 번만 로드)
+kospeech_model = None
+
+def get_kospeech_model():
+    global kospeech_model
+    if kospeech_model is None:
+        kospeech_model = KoSpeechInference()
+    return kospeech_model
+```
+
+##### 3. Flask API 서버
+
+```python
+# ml-services/stt-kospeech/app.py
 from flask import Flask, request, jsonify
-from model_loader import load_kospeech_model
+from werkzeug.utils import secure_filename
+import os
+import tempfile
+import time
+from kospeech_inference import get_kospeech_model
 
 app = Flask(__name__)
-model = load_kospeech_model()
+app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB
+
+# 모델 초기화 (서버 시작 시)
+print("Loading KoSpeech model...")
+model = get_kospeech_model()
+print("Model loaded successfully!")
+
+@app.route('/health', methods=['GET'])
+def health():
+    """헬스 체크"""
+    return jsonify({
+        'status': 'healthy',
+        'service': 'kospeech-stt',
+        'device': str(model.device)
+    })
 
 @app.route('/transcribe', methods=['POST'])
 def transcribe():
     """
     음성 파일을 받아 텍스트로 변환
+
+    Request:
+        - audio: 오디오 파일 (wav, mp3, m4a, webm)
+
+    Response:
+        {
+            "transcript": "안녕하세요",
+            "confidence": 0.95,
+            "duration_ms": 1234
+        }
     """
-    audio_file = request.files['audio']
+    start_time = time.time()
 
-    # KoSpeech 모델로 변환
-    transcript = model.transcribe(audio_file)
+    try:
+        # 파일 검증
+        if 'audio' not in request.files:
+            return jsonify({'error': 'No audio file provided'}), 400
 
-    return jsonify({
-        'transcript': transcript,
-        'confidence': 0.95
-    })
+        audio_file = request.files['audio']
+        if audio_file.filename == '':
+            return jsonify({'error': 'Empty filename'}), 400
 
-@app.route('/analyze', methods=['POST'])
-def analyze():
+        # 임시 파일로 저장
+        filename = secure_filename(audio_file.filename)
+        temp_dir = tempfile.gettempdir()
+        temp_path = os.path.join(temp_dir, f'audio_{int(time.time())}_{filename}')
+
+        audio_file.save(temp_path)
+
+        # KoSpeech 추론
+        transcript, confidence = model.transcribe(temp_path)
+
+        # 임시 파일 삭제
+        os.remove(temp_path)
+
+        duration_ms = int((time.time() - start_time) * 1000)
+
+        return jsonify({
+            'transcript': transcript,
+            'confidence': round(confidence, 4),
+            'duration_ms': duration_ms
+        })
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/transcribe-batch', methods=['POST'])
+def transcribe_batch():
     """
-    답변 분석: 키워드 누락, 문맥 어색함 탐지
+    여러 오디오 파일을 일괄 변환
+
+    Request:
+        - audios[]: 오디오 파일 배열
+
+    Response:
+        {
+            "results": [
+                {"transcript": "안녕하세요", "confidence": 0.95},
+                {"transcript": "감사합니다", "confidence": 0.92}
+            ]
+        }
     """
-    data = request.json
-    question = data['question']
-    answer = data['answer']
+    try:
+        if 'audios[]' not in request.files:
+            return jsonify({'error': 'No audio files provided'}), 400
 
-    # 키워드 추출
-    expected_keywords = extract_keywords(question)
-    user_keywords = extract_keywords(answer)
-    missing_keywords = set(expected_keywords) - set(user_keywords)
+        audio_files = request.files.getlist('audios[]')
+        results = []
 
-    # 문맥 분석 (GPT API 활용)
-    context_score = analyze_context(answer)
+        for audio_file in audio_files:
+            filename = secure_filename(audio_file.filename)
+            temp_path = os.path.join(tempfile.gettempdir(), f'batch_{int(time.time())}_{filename}')
 
-    return jsonify({
-        'missing_keywords': list(missing_keywords),
-        'context_score': context_score,
-        'is_awkward': context_score < 0.7
-    })
+            audio_file.save(temp_path)
+            transcript, confidence = model.transcribe(temp_path)
+            os.remove(temp_path)
+
+            results.append({
+                'filename': filename,
+                'transcript': transcript,
+                'confidence': round(confidence, 4)
+            })
+
+        return jsonify({'results': results})
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    # Production: gunicorn app:app -w 4 -b 0.0.0.0:5000
+    app.run(host='0.0.0.0', port=5000, debug=False)
 ```
 
 ---
