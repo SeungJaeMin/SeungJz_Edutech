@@ -63,7 +63,7 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({ onNavigate }) => {
         welcome!
       </h1>
 
-      {/* 컬러 박스 3개 */}
+      {/* 컬러 박스 3개 - 소셜 로그인 */}
       <div style={{
         position: 'absolute',
         bottom: '95px',
@@ -71,24 +71,24 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({ onNavigate }) => {
         gap: '37px',
         alignItems: 'center',
       }}>
-        {/* White Box with icon */}
+        {/* Google Login */}
         <ColorBox
           color="#FFFFFF"
-          icon="/placeholder-icon-1.png"
+          icon="/img/google.png"
           onClick={onNavigate}
         />
 
-        {/* Black Box with icon */}
+        {/* Apple Login */}
         <ColorBox
           color="#000000"
-          icon="/placeholder-icon-2.png"
+          icon="/img/apple.png"
           onClick={onNavigate}
         />
 
-        {/* Blue Box with icon - Figma: #1877F2 */}
+        {/* Facebook Login */}
         <ColorBox
           color="#1877F2"
-          icon="/placeholder-icon-3.png"
+          icon="/img/facebook.png"
           onClick={onNavigate}
         />
       </div>
