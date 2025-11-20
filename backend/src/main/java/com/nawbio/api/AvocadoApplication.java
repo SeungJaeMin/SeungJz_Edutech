@@ -8,9 +8,9 @@ import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 @SpringBootApplication
 @EnableJpaAuditing
 @ConfigurationPropertiesScan
-public class NawbioApiApplication {
+public class AvocadoApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(NawbioApiApplication.class, args);
+        SpringApplication.run(AvocadoApplication.class, args);
     }
 }
