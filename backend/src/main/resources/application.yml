@@ -1,0 +1,73 @@
+spring:
+  application:
+    name: seungjz-edutech-api
+
+  # H2 Database
+  datasource:
+    url: jdbc:h2:mem:edutech
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.H2Dialect
+
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
+
+# JWT Settings
+jwt:
+  secret: your-256-bit-secret-key-for-jwt-token-generation-change-in-production-environment
+  expiration: 86400000  # 24 hours
+
+# CORS Settings
+cors:
+  allowed-origins: http://localhost:3000,http://localhost:5173
+  allowed-methods: GET,POST,PUT,DELETE,PATCH,OPTIONS
+  allowed-headers: "*"
+  allow-credentials: true
+
+# ML Services (Mock for now)
+ml:
+  kospeech:
+    url: http://localhost:5000
+    enabled: false
+  emotion:
+    url: http://localhost:5001
+    enabled: false
+  gpt:
+    api-key: ${OPENAI_API_KEY:your-openai-api-key}
+    model: gpt-4-turbo
+    enabled: false
+
+server:
+  port: 8080
+
+# Logging
+logging:
+  level:
+    com.seungjz.edutech: DEBUG
+    org.springframework.security: DEBUG
+    org.hibernate.SQL: DEBUG
+
+# Swagger
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha
