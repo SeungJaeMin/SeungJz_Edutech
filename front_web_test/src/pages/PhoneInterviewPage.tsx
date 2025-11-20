@@ -2,7 +2,8 @@
 // Real-time emotion analysis using webcam
 
 import React, { useRef, useState, useEffect } from 'react';
-import { interviewService, EmotionAnalysisResponse } from '../services/interviewService';
+import { interviewService } from '../services/interviewService';
+import type { EmotionAnalysisResponse } from '../services/interviewService';
 
 interface PhoneInterviewPageProps {
   userId: string;
