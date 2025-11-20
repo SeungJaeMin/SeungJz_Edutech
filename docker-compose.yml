@@ -1,0 +1,177 @@
+version: '3.8'
+
+services:
+  # Frontend - React Application
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: seungjz-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - VITE_API_URL=http://localhost:8080
+      - VITE_WS_URL=ws://localhost:8080/ws
+    depends_on:
+      - backend
+    networks:
+      - seungjz-network
+    restart: unless-stopped
+
+  # Backend - Spring Boot
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: seungjz-backend
+    ports:
+      - "8080:8080"
+    environment:
+      # Database
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/edutech
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=password
+
+      # ML Services
+      - ML_STT_SERVICE_URL=http://ml-stt:5000
+      - ML_EMOTION_SERVICE_URL=http://ml-emotion:5001
+
+      # External APIs
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+
+      # AWS S3 (Video Storage)
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_S3_BUCKET=${AWS_S3_BUCKET}
+      - AWS_REGION=${AWS_REGION:-ap-northeast-2}
+
+      # OAuth (Google, Kakao)
+      - OAUTH_GOOGLE_CLIENT_ID=${OAUTH_GOOGLE_CLIENT_ID}
+      - OAUTH_GOOGLE_CLIENT_SECRET=${OAUTH_GOOGLE_CLIENT_SECRET}
+      - OAUTH_KAKAO_CLIENT_ID=${OAUTH_KAKAO_CLIENT_ID}
+      - OAUTH_KAKAO_CLIENT_SECRET=${OAUTH_KAKAO_CLIENT_SECRET}
+
+      # Application
+      - SPRING_PROFILES_ACTIVE=dev
+      - SERVER_PORT=8080
+    depends_on:
+      - postgres
+      - ml-stt
+      - ml-emotion
+    networks:
+      - seungjz-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ML Service 1: Speech-to-Text (KoSpeech)
+  ml-stt:
+    build:
+      context: ./ml-services/stt
+      dockerfile: ${STT_DOCKERFILE:-Dockerfile.gpu}
+    container_name: seungjz-ml-stt
+    ports:
+      - "5000:5000"
+    environment:
+      - USE_GPU=${USE_GPU:-true}
+      - MODEL_TYPE=${MODEL_TYPE:-kospeech}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - MODEL_PATH=/app/models
+    volumes:
+      - ./models/kospeech:/app/models
+      - ./ml-services/stt/cache:/root/.cache
+    networks:
+      - seungjz-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ML Service 2: Emotion Analysis (DeepFace)
+  ml-emotion:
+    build:
+      context: ./ml-services/emotion
+      dockerfile: Dockerfile
+    container_name: seungjz-ml-emotion
+    ports:
+      - "5001:5001"
+    environment:
+      - MODEL_BACKEND=${EMOTION_MODEL_BACKEND:-opencv}
+      - DETECTION_BACKEND=${EMOTION_DETECTION_BACKEND:-opencv}
+      - FLASK_ENV=production
+    volumes:
+      - ./models/deepface:/root/.deepface
+      - ./ml-services/emotion/cache:/root/.cache
+    networks:
+      - seungjz-network
+    restart: unless-stopped
+    # DeepFace는 CPU로도 충분히 빠름 (GPU 불필요)
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Database - PostgreSQL
+  postgres:
+    image: postgres:14-alpine
+    container_name: seungjz-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=edutech
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_INITDB_ARGS=--encoding=UTF-8
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/01-init.sql
+      - ./database/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql
+    networks:
+      - seungjz-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis (Optional - for session management & caching)
+  redis:
+    image: redis:7-alpine
+    container_name: seungjz-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - seungjz-network
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres-data:
+    driver: local
+  redis-data:
+    driver: local
+
+networks:
+  seungjz-network:
+    driver: bridge

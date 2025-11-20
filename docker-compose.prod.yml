@@ -1,0 +1,45 @@
+# ==============================================
+# Production Override (Whisper API 모드)
+# ==============================================
+# 사용법: docker-compose -f docker-compose.yml -f docker-compose.prod.yml up
+
+version: '3.8'
+
+services:
+  frontend:
+    environment:
+      - NODE_ENV=production
+      - VITE_API_URL=${PRODUCTION_API_URL}
+
+  backend:
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - LOGGING_LEVEL_ROOT=INFO
+
+  # GPU 없이 Whisper API 사용
+  ml-stt:
+    build:
+      context: ./ml-services/stt
+      dockerfile: Dockerfile.cpu
+    environment:
+      - USE_GPU=false
+      - MODEL_TYPE=whisper-api
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+    # GPU 설정 제거
+
+  ml-emotion:
+    environment:
+      - FLASK_ENV=production
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+
+  postgres:
+    # 프로덕션에서는 외부 포트 노출 안함
+    ports: []

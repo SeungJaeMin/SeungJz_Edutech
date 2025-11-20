@@ -1,0 +1,41 @@
+# ==============================================
+# Development Override
+# ==============================================
+# 사용법: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+version: '3.8'
+
+services:
+  frontend:
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+    environment:
+      - NODE_ENV=development
+      - VITE_API_URL=http://localhost:8080
+
+  backend:
+    volumes:
+      - ./backend/src:/app/src
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - SPRING_DEVTOOLS_RESTART_ENABLED=true
+      - LOGGING_LEVEL_ROOT=DEBUG
+
+  ml-stt:
+    volumes:
+      - ./ml-services/stt:/app
+    environment:
+      - FLASK_ENV=development
+      - FLASK_DEBUG=1
+
+  ml-emotion:
+    volumes:
+      - ./ml-services/emotion:/app
+    environment:
+      - FLASK_ENV=development
+      - FLASK_DEBUG=1
+
+  postgres:
+    ports:
+      - "5432:5432"  # 로컬에서 직접 접속 가능
