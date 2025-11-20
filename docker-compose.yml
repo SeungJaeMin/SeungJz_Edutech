@@ -29,8 +29,8 @@ services:
     environment:
       # Database
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/edutech
-      - SPRING_DATASOURCE_USERNAME=postgres
-      - SPRING_DATASOURCE_PASSWORD=password
+      - SPRING_DATASOURCE_USERNAME=admin
+      - SPRING_DATASOURCE_PASSWORD=admin123
 
       # ML Services
       - ML_STT_SERVICE_URL=http://ml-stt:5000
@@ -132,8 +132,8 @@ services:
       - "5432:5432"
     environment:
       - POSTGRES_DB=edutech
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=password
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=admin123
       - POSTGRES_INITDB_ARGS=--encoding=UTF-8
     volumes:
       - postgres-data:/var/lib/postgresql/data
