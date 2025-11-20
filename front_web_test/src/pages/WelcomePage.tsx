@@ -28,15 +28,26 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({ onNavigate }) => {
         top: '58px',
         width: '240px',
         height: '174px',
-        backgroundColor: '#E8E8E8',
         borderRadius: '10px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        fontSize: '14px',
-        color: '#999',
+        overflow: 'hidden',
       }}>
-        Logo Image
+        <img
+          src="/img/Abocado_Logo.png"
+          alt="Abocado Logo"
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'contain',
+          }}
+          onError={(e) => {
+            e.currentTarget.style.display = 'none';
+            e.currentTarget.parentElement!.style.backgroundColor = '#E8E8E8';
+            e.currentTarget.parentElement!.innerHTML = '<div style="font-size: 14px; color: #999;">Logo Image</div>';
+          }}
+        />
       </div>
 
       {/* Welcome 텍스트 */}

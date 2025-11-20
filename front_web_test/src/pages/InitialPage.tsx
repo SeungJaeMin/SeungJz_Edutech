@@ -35,15 +35,27 @@ export const InitialPage: React.FC<InitialPageProps> = ({ onNavigate }) => {
       <div style={{
         width: '240px',
         height: '240px',
-        backgroundColor: '#E8E8E8',
         borderRadius: '10px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        fontSize: '14px',
-        color: '#999',
+        overflow: 'hidden',
       }}>
-        App Logo
+        <img
+          src="/img/Abocado_Logo.png"
+          alt="Abocado Logo"
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'contain',
+          }}
+          onError={(e) => {
+            // 로고 로드 실패 시 placeholder 표시
+            e.currentTarget.style.display = 'none';
+            e.currentTarget.parentElement!.style.backgroundColor = '#E8E8E8';
+            e.currentTarget.parentElement!.innerHTML = '<div style="font-size: 14px; color: #999;">App Logo</div>';
+          }}
+        />
       </div>
 
       {/* 클릭 힌트 */}

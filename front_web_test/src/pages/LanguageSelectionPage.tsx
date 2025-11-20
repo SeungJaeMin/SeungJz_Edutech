@@ -77,15 +77,26 @@ export const LanguageSelectionPage: React.FC<LanguageSelectionPageProps> = ({ on
         marginTop: '35px',
         width: '138px',
         height: '100px',
-        backgroundColor: '#E8E8E8',
         borderRadius: '10px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        fontSize: '12px',
-        color: '#999',
+        overflow: 'hidden',
       }}>
-        Logo
+        <img
+          src="/img/Abocado_Logo.png"
+          alt="Abocado Logo"
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'contain',
+          }}
+          onError={(e) => {
+            e.currentTarget.style.display = 'none';
+            e.currentTarget.parentElement!.style.backgroundColor = '#E8E8E8';
+            e.currentTarget.parentElement!.innerHTML = '<div style="font-size: 12px; color: #999;">Logo</div>';
+          }}
+        />
       </div>
 
       {/* 제목 텍스트 */}
