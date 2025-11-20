@@ -25,8 +25,13 @@ spring:
 
   servlet:
     multipart:
-      max-file-size: 50MB
-      max-request-size: 50MB
+      max-file-size: 500MB
+      max-request-size: 510MB
+      enabled: true
+
+# File Upload
+file:
+  upload-dir: uploads
 
 # JWT Settings
 jwt:

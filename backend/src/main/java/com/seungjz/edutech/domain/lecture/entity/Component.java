@@ -7,6 +7,7 @@ import lombok.*;
 @Entity
 @Table(name = "components")
 @Getter
+@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder

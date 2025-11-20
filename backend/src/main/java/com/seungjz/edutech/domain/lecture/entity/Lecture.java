@@ -48,4 +48,34 @@ public class Lecture extends BaseEntity {
     public enum LectureType {
         MUSIC, DRAMA, TALK
     }
+
+    // 편의 메서드
+    public void addComponent(Component component) {
+        components.add(component);
+        component.setLecture(this);
+    }
+
+    public void removeComponent(Component component) {
+        components.remove(component);
+        component.setLecture(null);
+    }
+
+    public void clearComponents() {
+        components.forEach(component -> component.setLecture(null));
+        components.clear();
+    }
+
+    // 비즈니스 메서드
+    public void updateBasicInfo(String title, String artist, Integer level, LectureType type) {
+        this.title = title;
+        this.artist = artist;
+        this.level = level;
+        this.type = type;
+    }
+
+    public void updateVideoInfo(String videoUrl, String thumbnailUrl, Integer duration) {
+        this.videoUrl = videoUrl;
+        this.thumbnailUrl = thumbnailUrl;
+        this.duration = duration;
+    }
 }
