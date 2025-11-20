@@ -47,7 +47,11 @@ function App() {
       {screen === 5 && (
         <MainPage onSelectCategory={(category) => {
           console.log('Selected category:', category);
-          setScreen(6);
+          if (category === 'talk') {
+            setScreen(9); // Talk 선택 시 전화 인터뷰 페이지로
+          } else {
+            setScreen(6); // Music/Movie는 기존대로 Lecture 선택 화면으로
+          }
         }} />
       )}
 
@@ -109,7 +113,7 @@ function App() {
         <PhoneInterviewPage
           userId="user123"
           onComplete={() => setScreen(8)}
-          onBack={() => setScreen(7)}
+          onBack={() => setScreen(5)}
         />
       )}
 
