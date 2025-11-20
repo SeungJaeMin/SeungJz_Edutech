@@ -102,32 +102,6 @@ function App() {
         />
       )}
 
-      {/* Figma 정보 표시 */}
-      <div style={{
-        position: 'fixed',
-        bottom: '20px',
-        fontSize: '12px',
-        color: '#666',
-        textAlign: 'center',
-        backgroundColor: 'rgba(255, 255, 255, 0.9)',
-        padding: '10px 20px',
-        borderRadius: '8px',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-      }}>
-        <p style={{ margin: '5px 0' }}>✓ Figma 디자인 완벽 재현 (node-id: 30-1419)</p>
-        <p style={{ margin: '5px 0' }}>파일: HT_SeungJz (qNH0gG3M2WGNwK1ygMhG5e)</p>
-        <p style={{ margin: '5px 0' }}>화면 {screen}/8 | 디바이스: iPhone 16 (393x852)</p>
-        <p style={{ margin: '5px 0', fontSize: '10px', color: '#999' }}>
-          {screen === 1 && '클릭하여 시작'}
-          {screen === 2 && '소셜 로그인 선택'}
-          {screen === 3 && '언어 선택 후 CONTINUE 클릭'}
-          {screen === 4 && '실력 레벨 선택 후 CONTINUE 클릭'}
-          {screen === 5 && 'Movie/Music/Talk 카테고리 선택'}
-          {screen === 6 && 'Lecture 카드 스와이프 또는 클릭'}
-          {screen === 7 && 'Lecture 재생 중'}
-          {screen === 8 && 'Lecture 완료 결과'}
-        </p>
-      </div>
     </div>
   )
 }
