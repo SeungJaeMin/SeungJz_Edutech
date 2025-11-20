@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { InitialPage } from './pages/InitialPage'
 import { WelcomePage } from './pages/WelcomePage'
 import { LanguageSelectionPage } from './pages/LanguageSelectionPage'
+import { LevelSelectionPage } from './pages/LevelSelectionPage'
 import './App.css'
 
 function App() {
@@ -30,7 +31,28 @@ function App() {
 
       {/* 화면 3: 언어 선택 화면 (iPhone 16 - 26) */}
       {screen === 3 && (
-        <LanguageSelectionPage />
+        <LanguageSelectionPage onNavigate={() => setScreen(4)} />
+      )}
+
+      {/* 화면 4: 레벨 선택 화면 */}
+      {screen === 4 && (
+        <LevelSelectionPage onNavigate={() => setScreen(5)} />
+      )}
+
+      {/* 화면 5: 다음 화면 (TODO: 추가 예정) */}
+      {screen === 5 && (
+        <div style={{
+          width: '393px',
+          height: '852px',
+          backgroundColor: '#F5F9F0',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: '24px',
+          fontFamily: 'Fredoka, Inter, sans-serif',
+        }}>
+          메인 화면 (Coming Soon)
+        </div>
       )}
 
       {/* Figma 정보 표시 */}
@@ -47,11 +69,13 @@ function App() {
       }}>
         <p style={{ margin: '5px 0' }}>✓ Figma 디자인 완벽 재현 (node-id: 30-1419)</p>
         <p style={{ margin: '5px 0' }}>파일: HT_SeungJz (qNH0gG3M2WGNwK1ygMhG5e)</p>
-        <p style={{ margin: '5px 0' }}>화면 {screen}/3 | 디바이스: iPhone 16 (393x852)</p>
+        <p style={{ margin: '5px 0' }}>화면 {screen}/5 | 디바이스: iPhone 16 (393x852)</p>
         <p style={{ margin: '5px 0', fontSize: '10px', color: '#999' }}>
           {screen === 1 && '클릭하여 시작'}
           {screen === 2 && '소셜 로그인 선택'}
-          {screen === 3 && '학습할 언어 선택'}
+          {screen === 3 && '언어 선택 후 CONTINUE 클릭'}
+          {screen === 4 && '실력 레벨 선택 후 CONTINUE 클릭'}
+          {screen === 5 && '메인 화면'}
         </p>
       </div>
     </div>

@@ -44,14 +44,19 @@ const languages: Language[] = [
   },
 ];
 
-export const LanguageSelectionPage: React.FC = () => {
+interface LanguageSelectionPageProps {
+  onNavigate?: () => void;
+}
+
+export const LanguageSelectionPage: React.FC<LanguageSelectionPageProps> = ({ onNavigate }) => {
   const [selectedLanguage, setSelectedLanguage] = useState<string | null>(null);
 
   const handleContinue = () => {
     if (selectedLanguage) {
       console.log('Selected language:', selectedLanguage);
-      // TODO: 다음 화면으로 이동
-      alert(`Selected: ${selectedLanguage}`);
+      if (onNavigate) {
+        onNavigate();
+      }
     }
   };
 
