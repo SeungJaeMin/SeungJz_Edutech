@@ -1,3 +1,88 @@
+/* New Figma-based Design */
+.home-container-new {
+  min-height: 100vh;
+  background: white;
+  padding: 25px 32px;
+  display: flex;
+  flex-direction: column;
+}
+
+.profile-badge {
+  position: absolute;
+  top: 25px;
+  right: 32px;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: #d9d9d9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.profile-badge img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-initial {
+  font-size: 36px;
+  font-weight: 400;
+  color: #000;
+}
+
+.welcome-message {
+  margin-top: 284px;
+  margin-bottom: auto;
+}
+
+.welcome-message h1 {
+  font-size: 36px;
+  font-weight: 400;
+  color: #000;
+  margin: 0;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+}
+
+.learning-types {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  padding-bottom: 30px;
+}
+
+.type-card {
+  width: 101px;
+  height: 94px;
+  background: #d9d9d9;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.type-card:hover {
+  background: #c9c9c9;
+  transform: translateY(-3px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.type-card:active {
+  transform: translateY(-1px);
+}
+
+.type-label {
+  font-size: 36px;
+  font-weight: 400;
+  color: #000;
+}
+
+/* Legacy Design (keeping for backwards compatibility) */
 .home-container {
   min-height: 100vh;
   background: #f5f7fa;
@@ -46,128 +131,25 @@
   background: #d32f2f;
 }
 
-.home-main {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 40px 20px;
-}
-
-.welcome-section {
-  text-align: center;
-  margin-bottom: 50px;
-}
-
-.welcome-section h2 {
-  font-size: 2.5rem;
-  color: #333;
-  margin-bottom: 10px;
-}
-
-.welcome-section p {
-  font-size: 1.2rem;
-  color: #666;
-}
-
-.level-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 30px;
-  margin-bottom: 50px;
-}
-
-.level-card {
-  background: white;
-  border-radius: 15px;
-  padding: 30px;
-  text-align: center;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s, box-shadow 0.3s;
-}
-
-.level-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-}
-
-.level-icon {
-  font-size: 4rem;
-  margin-bottom: 20px;
-}
-
-.level-card h3 {
-  font-size: 1.5rem;
-  color: #333;
-  margin-bottom: 10px;
-}
-
-.level-card p {
-  color: #666;
-  margin-bottom: 20px;
-  line-height: 1.6;
-}
-
-.start-btn {
-  padding: 12px 30px;
-  background: #667eea;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.3s;
-}
-
-.start-btn:hover:not(:disabled) {
-  background: #5568d3;
-}
-
-.start-btn:disabled {
-  background: #ccc;
-  cursor: not-allowed;
-}
-
-.user-details {
-  background: white;
-  border-radius: 15px;
-  padding: 30px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  max-width: 600px;
-  margin: 0 auto;
-}
-
-.user-details h3 {
-  font-size: 1.5rem;
-  color: #333;
-  margin-bottom: 20px;
-  padding-bottom: 15px;
-  border-bottom: 2px solid #f0f0f0;
-}
-
-.detail-item {
-  display: flex;
-  justify-content: space-between;
-  padding: 15px 0;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.detail-item:last-child {
-  border-bottom: none;
-}
-
-.detail-item .label {
-  font-weight: 600;
-  color: #666;
-}
-
-@media (max-width: 768px) {
-  .home-header {
-    flex-direction: column;
-    gap: 15px;
-    text-align: center;
+@media (max-width: 480px) {
+  .welcome-message {
+    margin-top: 200px;
   }
 
-  .level-cards {
-    grid-template-columns: 1fr;
+  .welcome-message h1 {
+    font-size: 28px;
+  }
+
+  .learning-types {
+    flex-wrap: wrap;
+  }
+
+  .type-card {
+    width: 90px;
+    height: 84px;
+  }
+
+  .type-label {
+    font-size: 32px;
   }
 }
