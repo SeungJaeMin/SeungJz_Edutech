@@ -82,7 +82,7 @@ function App() {
         }}>
           <p style={{ marginBottom: '20px' }}>Video Playing...</p>
           <button
-            onClick={() => setScreen(9)}
+            onClick={() => setScreen(8)}
             style={{
               backgroundColor: '#8CC63F',
               border: 'none',
@@ -96,7 +96,7 @@ function App() {
               marginBottom: '20px',
             }}
           >
-            Start 3rd Stage (Phone Interview)
+            View Results
           </button>
         </div>
       )}
